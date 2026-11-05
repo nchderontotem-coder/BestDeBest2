@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://lpmcchrohnoirigighro.supabase.co; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BestDeBest - E-Commerce Forecasting Store</title>
+    <meta name="description" content="BestDeBest: shop a wide variety of products at the best quality and price.">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="images/logo.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="cartToast" class="cart-toast is-hidden" role="status" aria-live="polite">
+        🛒 Added <strong id="toastProductName">Item</strong> to your cart!
+    </div>
+
+    <div class="header">
+        <div class="logo-container" onclick="openPolicyModal()" title="View Store Policy & Contact" role="button" tabindex="0" aria-label="View store policy and contact">
+            <img src="images/logo.png" alt="BestDeBest Logo" class="logo-img">
+        </div>
+        
+        <div class="search-container" id="searchContainerWrapper">
+            <input type="search" id="searchInput" aria-label="Search products" placeholder="Search Products..." onkeydown="if(event.key==='Enter'){event.preventDefault();handleSearch();}" onkeyup="handleSearchInput()" oninput="handleSearchInput()">
+            <button class="search-clear-btn is-hidden" id="searchClearBtn" onclick="clearSearch()" title="Clear Search">&times;</button>
+            <button class="search-submit-btn" onclick="handleSearch()">Search</button>
+        </div>
+
+        <div class="header-actions">
+            <button
+    type="button"
+    class="cart-toggle-btn ai-forecast-nav-btn"
+    id="aiForecastNavBtn"
+    onclick="window.location.href='forecast.html'">
+
+    🤖 AI Forecast
+</button>
+            <button class="cart-toggle-btn support-btn" id="supportToggleBtn" onclick="openSupportModal()" aria-label="Open customer service">
+                🎧 Support <span class="support-badge is-hidden" id="supportBadge">0</span>
+            </button>
+            <button class="cart-toggle-btn" id="cartToggleBtn" onclick="toggleCartDrawer()" aria-label="Open shopping cart">
+                🛒 Cart (<span id="cartCount">0</span>)
+            </button>
+            <div class="auth-header-buttons" id="authHeaderButtons">
+                <button class="auth-btn-login" onclick="openModal('loginModal')">Log In</button>
+                <button class="auth-btn-signup" onclick="openModal('signupModal')">Sign Up</button>
+            </div>
+            <div id="userProfileHeader" class="user-profile is-hidden">
+                <button type="button" class="user-profile-btn" onclick="openSettingsModal()" title="Account Settings" aria-label="Open account settings">
+                    <img id="headerProfilePicture" class="account-avatar account-avatar-header is-hidden" src="" alt="Profile picture">
+                    <span id="headerUserName" class="user-name"></span>
+                </button>
+                <button onclick="logoutUser()" class="signout-btn">Sign Out</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="utility-bar">
+        <span id="utilityMessage">Sign Up or Log in to purchase products from the store</span>
+    </div>
+
+    <nav class="sub-nav" id="categoryNav"></nav>
+
+    <div id="storefrontView">
+        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleLeftSidebar()" title="Toggle Sidebar">&lt;</button>
+        
+        <div class="left-sidebar" id="leftSidebar">
+            <div class="sidebar-header">
+                <h3 id="sidebarHubTitle">Customer Hub</h3>
+                <span class="close-sidebar" onclick="toggleLeftSidebar()">&times;</span>
+            </div>
+
+            <div id="sidebarTabSwitcher" class="sidebar-tab-switcher is-hidden">
+                <button class="sidebar-switch-tab-btn active" id="swTabShop" onclick="switchSidebarTab('shop')">Shop View</button>
+                <button class="sidebar-switch-tab-btn is-hidden" id="swTabMyShop" onclick="switchSidebarTab('myshop')">Seller Page</button>
+                <button class="sidebar-switch-tab-btn is-hidden" id="swTabDelivery" onclick="switchSidebarTab('delivery')">Delivery</button>
+            </div>
+
+            <div id="customerHubContent">
+                <div class="purchases-card">
+                    <div class="purchases-title-row">
+                        <span>My Purchases</span>
+                        <a href="#" onclick="openPurchasesPanel('all'); return false;" class="history-link">View Purchase History &rsaquo;</a>
+                    </div>
+                    <div class="purchases-actions-grid">
+                        <button class="purchase-status-btn" onclick="openPurchasesPanel('to_pay')">
+                            <span class="status-icon">👛</span>
+                            <span class="status-label">To Pay</span>
+                        </button>
+                        <button class="purchase-status-btn" onclick="openPurchasesPanel('to_ship')">
+                            <span class="status-icon">📦</span>
+                            <span class="status-label">To Ship</span>
+                        </button>
+                        <button class="purchase-status-btn" onclick="openPurchasesPanel('to_receive')">
+                            <span class="status-icon">🚚</span>
+                            <span class="status-label">To Receive</span>
+                        </button>
+                        <button class="purchase-status-btn" onclick="openPurchasesPanel('to_rate')">
+                            <span class="status-icon status-badge-parent">
+                                ⭐️
+                                <span class="status-badge is-hidden" id="toRateBadge">0</span>
+                            </span>
+                            <span class="status-label">To Rate</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="purchases-card" id="achievementsCard">
+                    <div class="purchases-title-row"><span>🏆 Achievements</span></div>
+                    <div id="achievementsBody"></div>
+                </div>
+
+                <div class="purchases-card" id="ageVerifyCard" style="display:none;">
+                    <div class="purchases-title-row"><span>🪪 Age Verification</span></div>
+                    <div id="ageVerifyBody"></div>
+                </div>
+
+                <div class="seller-card" id="sellerSidebarCard">
+                    <h4 id="sellerCardHeading">🏪 Become a Seller</h4>
+                    <p id="sellerCardDesc">Start listing your own products on BestDeBest and reach thousands of daily buyers!</p>
+                    <button class="seller-apply-btn" id="sellerCardBtn" onclick="handleSellerButtonClick()">Apply as Seller</button>
+                </div>
+
+                <div class="seller-card seller-card--delivery" id="deliverySidebarCard">
+                    <h4 id="deliveryCardHeading" class="text-amber">🚚 Apply as Delivery</h4>
+                    <p id="deliveryCardDesc">Deliver confirmed orders and earn. Accept packages from sellers after they confirm.</p>
+                    <button class="seller-apply-btn seller-apply-btn--delivery" id="deliveryCardBtn" onclick="handleDeliveryButtonClick()">Apply as Delivery</button>
+                </div>
+            </div>
+
+            <div id="sellerDashboardHubContent" class="hub-panel is-hidden">
+                <div class="purchases-card">
+                    <h4 class="hub-heading">📊 Shop Analytics & Sales</h4>
+                    <p class="hub-text">Total Published: <strong id="sellerPubCount" class="text-sky">0</strong></p>
+                    <p class="hub-text">Total Sales Earnings: <strong id="sellerTotalEarnings" class="text-green-light">₱0.00</strong></p>
+                    <p class="hub-text hub-text--small">Gross sales from orders not declined; before any platform fees.</p>
+                    <div class="chart-box">
+                        <h4 class="chart-box-title">📊 Sales in the Last 7 Days</h4>
+                        <div id="sellerSalesSummary"><p class="text-muted fs-11">Your sales summary will appear here.</p></div>
+                    </div>
+                    <button class="seller-apply-btn" onclick="openModal('addProductModal')">+ Add New Product</button>
+                </div>
+                <div class="purchases-card">
+                    <h4 class="hub-heading">🔔 Product Notifications</h4>
+                    <div id="sellerHubNotifs" class="hub-list hub-list--180">
+                        <p class="text-muted">No new alerts.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="deliveryDashboardHubContent" class="hub-panel is-hidden">
+                <div class="purchases-card">
+                    <h4 class="hub-heading hub-heading--delivery">🚚 Delivery Hub</h4>
+                    <p class="hub-text">Accept seller-confirmed orders ready for delivery.</p>
+                    <button id="resignDeliveryBtn" onclick="resignAsDeliveryRider()" class="bg-red text-white bd-none p-4-10 r-4 fs-11 cur-pointer mt-6">Resign as Rider</button>
+                    <div id="deliveryOrdersList" class="hub-list hub-list--220 mt-12">
+                        <p class="text-muted">No orders available yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+<div id="resetPasswordModal" class="modal hidden">
+  <div class="modal-content reset-modal">
+    <span class="close-btn" onclick="closeResetPasswordModal()">&times;</span>
+
+    <h2>Reset Password</h2>
+
+    <p class="reset-info">
+      Enter your account email and create a new password.
+    </p>
+
+    <label>Email Address</label>
+    <input
+      type="email"
+      id="resetEmail"
+      placeholder="Enter Email"
+      required
+    >
+
+    <label>New Password</label>
+    <input
+      type="password"
+      id="newPassword"
+      placeholder="At least 6 characters"
+      required
+    >
+
+    <label>Confirm New Password</label>
+    <input
+      type="password"
+      id="confirmPassword"
+      placeholder="Repeat new password"
+      required
+    >
+
+    <button onclick="resetPassword()">
+      Reset Password
+    </button>
+
+    <a href="#" onclick="backToLogin()">
+      ← Back to Sign In
+    </a>
+  </div>
+</div>
+        <div class="purchases-panel" id="purchasesPanel">
+            <div class="purchases-panel-header">
+                <h3 id="purchasesPanelTitle">Purchase Orders</h3>
+                <span class="close-sidebar" onclick="closePurchasesPanel()">&times;</span>
+            </div>
+            <div class="purchases-tabs">
+                <button class="purchases-tab-btn active" id="tab-all" onclick="filterPurchasesTab('all')">All</button>
+                <button class="purchases-tab-btn" id="tab-to_pay" onclick="filterPurchasesTab('to_pay')">To Pay</button>
+                <button class="purchases-tab-btn" id="tab-to_ship" onclick="filterPurchasesTab('to_ship')">To Ship</button>
+                <button class="purchases-tab-btn" id="tab-to_receive" onclick="filterPurchasesTab('to_receive')">To Receive</button>
+                <button class="purchases-tab-btn" id="tab-to_rate" onclick="filterPurchasesTab('to_rate')">To Rate</button>
+            </div>
+            <div class="purchases-orders-list" id="purchasesOrdersList"></div>
+        </div>
+
+        <section class="hero hero--clickable" onclick="openModal('aboutModal')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openModal('aboutModal');}" role="button" tabindex="0" aria-label="Learn what BestDeBest is about" title="Click to learn about BestDeBest">
+            <div class="hero-content">
+                <h1>Best Deals. Everyday.</h1>
+                <p>Search a wide variety of products on its best quality and price.</p>
+                <span class="hero-more">ℹ️ What is BestDeBest? Click to find out &rsaquo;</span>
+            </div>
+        </section>
+
+        <div class="container">
+            <div id="roleModeBar" class="role-mode-bar is-hidden"></div>
+            <div class="purchases-card delivery-main-panel is-hidden" id="deliveryStatsCard">
+                <h4 class="hub-heading hub-heading--delivery">📊 My Delivery Stats</h4>
+                <div id="deliveryStats" class="delivery-stats" aria-label="Your delivery summary"></div>
+                <div id="deliveryStatsExtra"></div>
+                <p class="form-hint mb-8" id="deliveryChatHint">Having trouble? Chat with the admin.</p>
+                <button type="button" id="deliveryChatBtn" class="seller-apply-btn seller-apply-btn--delivery" onclick="openRiderAdminChat()">💬 Chat with the Admin</button>
+            </div>
+            <div id="storeProductsArea">
+            <div class="section-header-row">
+                <h2 class="section-title section-title--flush" id="sectionTitle">All Products Inventory</h2>
+                <div class="filter-controls-group">
+                    <div id="subFilterContainer" class="is-hidden">
+                        <select id="subCategoryFilter" onchange="applySubCategoryFilter()" class="sub-filter-select"></select>
+                    </div>
+                    <select id="sortFilter" onchange="applySortingAndFilters()" class="sub-filter-select">
+                        <option value="relevant">Relevant</option>
+                        <option value="latest">Latest Products</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                    </select>
+                </div>
+            </div>
+            <div id="adultNotice" class="adult-notice is-hidden" role="status"></div>
+            <div class="product-grid" id="productGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminDashboardView" class="admin-dashboard is-hidden">
+        <div class="admin-topbar">
+            <h1 class="admin-title">📊 Manager's Forecasting, Warehouse & Stock Dashboard</h1>
+            <div class="admin-tools">
+                <div onclick="toggleManagerNotifDropdown()" title="Stock Notifications" class="admin-bell">
+                    <span class="fs-22">🔔</span>
+                    <span id="managerBellBadge" class="admin-bell-badge">0</span>
+                </div>
+
+                <div id="managerNotifDropdown" class="manager-notif-dropdown is-hidden">
+                    <div class="notif-dropdown-title">Stock Alerts</div>
+                    <div id="managerNotifList" class="notif-dropdown-list">
+                        <p class="text-muted">No stock alerts.</p>
+                    </div>
+                </div>
+
+                <span id="adminEmailBadge" class="admin-email-badge">bruhboyxean30@gmail.com</span>
+                <button id="adminStoreSwitchBtn" onclick="toggleAdminStoreView()" class="admin-action-btn admin-action-btn--teal">View Main Store</button>
+                <button onclick="openModal('addAdminModal')" class="admin-action-btn">+ Add Admin/Mod</button>
+            </div>
+        </div>
+
+        <div class="admin-kpi-row" id="adminKpiRow"></div>
+
+        <div class="admin-grid-layout">
+            <div class="admin-card revenue-card">
+                <h3>Revenue Overview</h3>
+                <div class="revenue-stats">
+                    <div>
+                        <span class="rev-val" id="adminMonthRevenue">₱102,500.00</span>
+                        <span class="rev-label">This Month</span>
+                    </div>
+                    <div>
+                        <span class="rev-val-sm" id="adminWeekRevenue">₱3,567.00</span>
+                        <span class="rev-label">This Week</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card recent-sales-card">
+                <h3>Recent Sales Feed</h3>
+                <div id="adminRecentSalesList" class="sales-feed-list">
+                    <p class="text-muted fs-13">No recent transactions recorded yet.</p>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h3 id="adminOnlineTitle">Admins Online</h3>
+                <div id="adminOnlineList" class="mh-320 oy-auto fs-12"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3>Registered Suppliers</h3>
+                <div id="adminSuppliersList" class="mh-180 oy-auto fs-12"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3>Warehouses</h3>
+                <div id="adminWarehousesList" class="mh-180 oy-auto fs-12"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3>Shipping Addresses</h3>
+                <div id="adminShippingList" class="mh-180 oy-auto fs-12"></div>
+            </div>
+
+            <div class="admin-card wide">
+                <h3>📉 Restock Forecast</h3>
+                <div id="adminForecastList"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3>🏆 Top Sellers</h3>
+                <div id="adminTopSellers"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3>🧾 Orders Pipeline</h3>
+                <div id="adminOrderPipeline"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3>📊 Sales by Category</h3>
+                <div id="adminCategorySales"></div>
+            </div>
+
+            <div class="admin-card wide">
+                <h3>🪪 Age Verification (ID Review)</h3>
+                <div id="adminIdList" class="mh-440 oy-auto"></div>
+            </div>
+
+            <div class="admin-card wide">
+                <h3>👥 Customer Accounts</h3>
+                <div class="stock-toolbar">
+                    <input type="search" id="adminCustomerSearch" placeholder="Search name, email or shop..." aria-label="Search accounts" oninput="renderCustomerDirectory()">
+                    <select id="adminCustomerFilter" aria-label="Filter accounts" onchange="renderCustomerDirectory()">
+                        <option value="all">All accounts</option>
+                        <option value="active">Active</option>
+                        <option value="banned">Banned</option>
+                        <option value="sellers">Sellers</option>
+                        <option value="riders">Delivery riders</option>
+                        <option value="minors">Under 18</option>
+                        <option value="unread">New chat replies</option>
+                    </select>
+                </div>
+                <div id="adminCustomersList" class="mh-440 oy-auto"></div>
+            </div>
+
+            <div class="admin-card wide">
+                <h3>📦 Order Management</h3>
+                <div class="stock-toolbar">
+                    <input type="search" id="adminOrderSearch" placeholder="Search order ID, buyer or item..." aria-label="Search orders" oninput="renderAdminOrders()">
+                    <select id="adminOrderStatus" aria-label="Filter orders" onchange="renderAdminOrders()">
+                        <option value="active">Open orders</option>
+                        <option value="all">All orders</option>
+                        <option value="to_confirm">Awaiting seller</option>
+                        <option value="to_pay">To pay</option>
+                        <option value="to_ship">To ship</option>
+                        <option value="to_receive">On the way</option>
+                        <option value="to_rate">Delivered</option>
+                        <option value="declined">Declined / cancelled</option>
+                    </select>
+                </div>
+                <div id="adminOrdersList" class="mh-440 oy-auto"></div>
+            </div>
+
+            <div class="admin-card wide">
+                <h3>↩️ Returns & Refunds (broken items)</h3>
+                <div id="adminReturnsList" class="mh-420 oy-auto"></div>
+            </div>
+
+            <div class="admin-card wide">
+                <h3>🎧 Customer Service Inbox</h3>
+                <div class="stock-toolbar">
+                    <select id="adminSupportFilter" aria-label="Filter tickets" onchange="renderSupportInbox()">
+                        <option value="needs">Needs reply</option>
+                        <option value="answered">Answered</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="all">All tickets</option>
+                    </select>
+                </div>
+                <div id="adminSupportList" class="mh-420 oy-auto"></div>
+            </div>
+
+            <div class="admin-card stock-status-card wide">
+                <h3>In-Store Stock & Policy Moderation</h3>
+                <div class="stock-toolbar">
+                    <input type="search" id="adminStockSearch" placeholder="Search product or seller..." aria-label="Search stock" oninput="renderAdminStockPanel()">
+                    <select id="adminStockFilter" aria-label="Filter stock" onchange="renderAdminStockPanel()">
+                        <option value="all">All stock</option>
+                        <option value="low">Low stock</option>
+                        <option value="out">Out of stock</option>
+                    </select>
+                    <select id="adminStockSort" aria-label="Sort stock" onchange="renderAdminStockPanel()">
+                        <option value="stock-asc">Lowest stock first</option>
+                        <option value="stock-desc">Highest stock first</option>
+                        <option value="sold-desc">Best sellers first</option>
+                        <option value="name">Name A–Z</option>
+                    </select>
+                    <button type="button" class="export-btn" onclick="exportStockCSV()">⬇ Stock CSV</button>
+                    <button type="button" class="export-btn" onclick="exportSalesCSV()">⬇ Sales CSV</button>
+                </div>
+                <div id="adminStockList" class="mh-380 oy-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="signupModal">
+        <div class="modal-content modal-content--compact">
+            <span class="close-btn" onclick="closeModal('signupModal')">&times;</span>
+            <h2 class="modal-title">Create an Account</h2>
+            <form onsubmit="handleSignup(event)" class="compact-form">
+                <div class="form-row-2">
+                    <div class="form-group"><label>First Name</label><input type="text" id="signupFirstName" required maxlength="30" placeholder="e.g. Alfred" autocomplete="given-name" onkeydown="blockSpaceKey(event)" oninput="clearNameError('signupFirstNameError')"><small class="field-error is-hidden" id="signupFirstNameError" role="alert"></small></div>
+                    <div class="form-group"><label>Last Name</label><input type="text" id="signupLastName" required maxlength="30" placeholder="e.g. Gonzales" autocomplete="family-name" onkeydown="blockSpaceKey(event)" oninput="clearNameError('signupLastNameError')"><small class="field-error is-hidden" id="signupLastNameError" role="alert"></small></div>
+                </div>
+                <div class="form-group"><label>Customer Display Name</label><input type="text" id="signupDisplayName" required maxlength="30" placeholder="e.g. AlfieG" onkeydown="blockSpaceKey(event)" oninput="clearNameError('signupNameError')"><small class="field-error is-hidden" id="signupNameError" role="alert"></small></div>
+                <div class="form-group"><label>Shipping Location / City</label><input type="text" id="signupLocation" required maxlength="80" list="cityOptions" autocomplete="address-level2" placeholder="e.g. Quezon City" oninput="clearNameError('signupLocationError')"><small class="form-hint">Your real city or municipality in the Philippines. Spaces and . , - ' are fine.</small><small class="field-error is-hidden" id="signupLocationError" role="alert"></small><datalist id="cityOptions"></datalist></div>
+                <div class="form-group"><label>Date of Birth</label><input type="date" id="signupBirthDate" required><small class="form-hint">You must be 13+ to sign up. 18+ items are only shown to accounts aged 18+ that pass ID verification.</small></div>
+                <div class="form-group"><label>Email Address</label><input type="email" id="signupEmail" required autocomplete="email" placeholder="yourname@gmail.com" onkeydown="blockSpaceKey(event)" oninput="clearNameError('signupEmailError')"><small class="field-error is-hidden" id="signupEmailError" role="alert"></small></div>
+                <div class="form-group"><label>Password</label><div class="password-wrap"><input type="password" id="signupPassword" required minlength="6" autocomplete="new-password" placeholder="e.g. Hello@123" onkeydown="blockSpaceKey(event)" oninput="clearNameError('signupPasswordError')"><button type="button" class="password-toggle" onclick="togglePassword('signupPassword', this)" aria-label="Show password" title="Show password"></button></div><small class="form-hint">6+ characters, no spaces, with at least one special character (* @ # ! $ % ...).</small><small class="field-error is-hidden" id="signupPasswordError" role="alert"></small></div>
+                <button type="submit" class="auth-submit-btn">Register</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('loginModal')">&times;</span>
+            <h2 class="modal-title">Sign In</h2>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group"><label>Email Address</label><input type="email" id="loginEmail" required autocomplete="email" placeholder="Enter Gmail"></div>
+                <div class="form-group"><label>Password</label><div class="password-wrap"><input type="password" id="loginPassword" required autocomplete="current-password" placeholder="Enter Password"><button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Show password" title="Show password"></button></div></div>
+                <button type="submit" class="auth-submit-btn">Sign In</button>
+                <a href="#" class="forgot-link" onclick="openForgotPassword(); return false;">Forgot password?</a>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="addAdminModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('addAdminModal')">&times;</span>
+            <h2 class="modal-title">Add Admin / Moderator</h2>
+            <form onsubmit="handleAddNewAdmin(event)">
+                <div class="form-group"><label>Name</label><input type="text" id="newAdminName" required placeholder="e.g. Sarah"></div>
+                <div class="form-group"><label>Email Address</label><input type="email" id="newAdminEmail" required placeholder="moderator@gmail.com"></div>
+                <div class="form-group"><label>Password</label><input type="password" id="newAdminPassword" required placeholder="Password"></div>
+                <button type="submit" class="auth-submit-btn">Grant Manager Access</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="forgotPasswordModal">
+        <div class="modal-content reset-modal">
+            <span class="close-btn" onclick="closeModal('forgotPasswordModal')">&times;</span>
+            <h2 class="modal-title mb-8">Reset Password</h2>
+            <p class="modal-note" id="resetPasswordNote">Enter your account email to receive a 6-digit verification code.</p>
+            <form id="resetEmailForm" onsubmit="handleForgotPassword(event)">
+                <div class="form-group"><label for="forgotEmail">Account Email</label><input type="email" id="forgotEmail" required autocomplete="email" placeholder="name@example.com"></div>
+                <button type="submit" class="auth-submit-btn" id="resetSendCodeBtn">Send Reset Code</button>
+            </form>
+            <form id="resetNewPasswordForm" class="is-hidden" onsubmit="completePasswordReset(event)">
+                <div class="form-group"><label for="forgotNewPassword">New Password</label><input type="password" id="forgotNewPassword" required minlength="6" autocomplete="new-password" placeholder="At least 6 characters"></div>
+                <div class="form-group"><label for="forgotConfirmPassword">Confirm New Password</label><input type="password" id="forgotConfirmPassword" required minlength="6" autocomplete="new-password" placeholder="Repeat new password"></div>
+                <button type="submit" class="auth-submit-btn">Reset Password</button>
+            </form>
+            <a href="#" class="forgot-link" onclick="closeModal('forgotPasswordModal'); openModal('loginModal'); return false;">&larr; Back to Sign In</a>
+        </div>
+    </div>
+
+    <div class="modal" id="banReasonModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('banReasonModal')">&times;</span>
+            <h2 class="modal-title text-red">Ban Product / Policy Violation</h2>
+            <p class="modal-note mb-12">Please specify the violation reason for removing this item:</p>
+            <form onsubmit="confirmBanProduct(event)">
+                <div class="form-group">
+                    <label>Reason for Removal</label>
+                    <textarea id="banReasonInput" rows="3" required placeholder="e.g. Violates store catalog policy guidelines." class="textarea-field"></textarea>
+                </div>
+                <button type="submit" class="auth-submit-btn auth-submit-btn--danger">Confirm Ban & Notify Seller</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="reportMistakeModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('reportMistakeModal')">&times;</span>
+            <h2 class="modal-title text-sky">Raise Concern / Report Moderator Mistake</h2>
+            <p class="modal-note mb-12">Explain why this removal was a mistake so the admin team can review your listing:</p>
+            <form onsubmit="submitMistakeReport(event)">
+                <div class="form-group">
+                    <label>Appeal / Explanation</label>
+                    <textarea id="mistakeReasonInput" rows="3" required placeholder="e.g. This item complies fully with standard accessories policy..." class="textarea-field"></textarea>
+                </div>
+                <button type="submit" class="auth-submit-btn">Submit Appeal to Admin</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="verifyPasswordModal">
+        <div class="modal-content reset-modal">
+            <span class="close-btn" onclick="closeModal('verifyPasswordModal')">&times;</span>
+            <h2 class="modal-title">Verify It's You</h2>
+            <p class="modal-note">Enter your account email to receive a 6-digit verification code before changing your profile.</p>
+            <form onsubmit="confirmPasswordVerification(event)">
+                <div class="form-group"><label for="verifyEmailInput">Account Email</label><input type="email" id="verifyEmailInput" required readonly></div>
+                <button type="submit" class="auth-submit-btn">Send Verification Code</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content modal-content--settings">
+            <span class="close-btn" onclick="closeModal('settingsModal')">&times;</span>
+            <h2 class="modal-title">Account Settings</h2>
+            <form onsubmit="saveAccountSettings(event)">
+                <div class="profile-picture-editor">
+                    <img id="settingsProfilePicturePreview" class="account-avatar account-avatar-large" src="" alt="Your profile picture preview">
+                    <div class="profile-picture-controls">
+                        <label for="settingsProfilePicture">Profile Picture</label>
+                        <input type="file" id="settingsProfilePicture" accept="image/png,image/jpeg,image/webp,image/gif" onchange="previewProfilePicture(event)">
+                        <small>Choose a JPG, PNG, WEBP, or GIF image (max 2 MB).</small>
+                        <button type="button" class="profile-remove-btn" onclick="removeProfilePicture()">Remove picture</button>
+                    </div>
+                </div>
+                <div class="form-group"><label>Display Name</label><input type="text" id="settingsDisplayName" required maxlength="30" onkeydown="blockSpaceKey(event)" oninput="clearNameError('settingsNameError')"><small class="field-error is-hidden" id="settingsNameError" role="alert"></small></div>
+                <div class="form-group"><label>Location / Address</label><input type="text" id="settingsLocation" required maxlength="80" list="cityOptions" autocomplete="address-level2" oninput="clearNameError('settingsLocationError')"><small class="field-error is-hidden" id="settingsLocationError" role="alert"></small></div>
+                <div class="form-group"><label>Public Profile Bio</label><textarea id="settingsBio" rows="2" placeholder="Tell people about yourself or your shop"></textarea></div>
+                <div class="form-group"><label>Date of Creation (Read-Only)</label><input type="text" id="settingsDateCreated" readonly class="input-readonly"></div>
+                <button type="submit" class="auth-submit-btn">Save Changes</button>
+                <button type="button" class="auth-submit-btn auth-submit-btn--muted" onclick="openPublicProfile(currentUser.email)">Preview Public Profile</button>
+            </form>
+            <div id="settingsBadgesSection">
+                <div class="ach-rewards-title">🏅 Badges &amp; Missions</div>
+                <p class="form-hint mb-8">Finish a mission to earn its badge. Your badges show on your public profile so other people can see them.</p>
+                <div id="settingsBadgesBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="sellerModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('sellerModal')">&times;</span>
+            <h2 class="modal-title">Become a Verified Seller</h2>
+            <form onsubmit="handleSellerRegistration(event)">
+                <div class="form-group">
+                    <label>Shop / Seller Display Name</label>
+                    <input type="text" id="sellerShopName" required maxlength="30" placeholder="e.g. BruddasShop" oninput="clearNameError('sellerNameError')"><small class="field-error is-hidden" id="sellerNameError" role="alert"></small>
+                </div>
+                <button type="submit" class="auth-submit-btn auth-submit-btn--success">Register Shop & Start Selling</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="editProductModal">
+        <div class="modal-content modal-content--wide">
+            <span class="close-btn" onclick="closeModal('editProductModal')">&times;</span>
+            <h2 class="modal-title">Modify Published Product</h2>
+            <form onsubmit="handleSaveEditedProduct(event)">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="editProdName" required maxlength="80">
+                </div>
+                <div class="form-group">
+                    <label>Price (₱)</label>
+                    <input type="number" step="0.01" min="0.01" max="10000000" id="editProdPrice" required>
+                </div>
+                <div class="form-group">
+                    <label>Stock Count</label>
+                    <input type="number" step="1" min="0" max="100000" id="editProdStock" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="editProdDesc" required>
+                </div>
+                <button type="submit" class="auth-submit-btn">Update Product Details</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="addProductModal">
+        <div class="modal-content modal-content--wide">
+            <span class="close-btn" onclick="closeModal('addProductModal')">&times;</span>
+            <h2 class="modal-title">List Item for Sale</h2>
+            <form onsubmit="handleAddNewProduct(event)">
+                <div class="form-group">
+                    <label>Product Picture</label>
+                    <input type="file" id="prodImgInput" accept="image/*">
+                    <small class="text-muted">Choose an image from your device (JPG, PNG, WebP; up to 3 MB).</small>
+                </div>
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="prodNameInput" required maxlength="80" placeholder="e.g. Digital Microwave">
+                </div>
+                <div class="form-group">
+                    <label>Category & Sub-Category</label>
+                    <select id="prodCategorySelect" required class="sub-filter-select select-full">
+                        <option value="1:smartphones">Electronics - Smartphones</option>
+                        <option value="1:laptops">Electronics - Laptops</option>
+                        <option value="2:men">Clothing - Men's Clothing</option>
+                        <option value="2:women">Clothing - Women's Clothing</option>
+                        <option value="3:kitchenware">Home & Kitchen - Kitchenware</option>
+                        <option value="3:appliances">Home & Kitchen - Appliances</option>
+                        <option value="4:accessories">Novelties & Accessories</option>
+                        <option value="5:beverages">Food - Beverages</option>
+                        <option value="5:snacks">Food - Snacks</option>
+                        <option value="5:food">Food - Food</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Price (₱)</label>
+                    <input type="number" step="0.01" min="0.01" max="10000000" id="prodPriceInput" required placeholder="e.g. 1499.00">
+                </div>
+                <div class="form-group">
+                    <label>Initial Stock Units</label>
+                    <input type="number" step="1" min="0" max="100000" id="prodStockInput" required placeholder="e.g. 20" value="10">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="prodDescInput" required placeholder="Short item description">
+                </div>
+                <label class="check-row"><input type="checkbox" id="prodAdultInput"> This is an adult-only item (18+)</label>
+                <button type="submit" class="auth-submit-btn">Publish Product to Store</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="aboutModal">
+        <div class="modal-content modal-content--about">
+            <span class="close-btn" onclick="closeModal('aboutModal')">&times;</span>
+            <h2 class="modal-title mb-12">🛍️ About BestDeBest</h2>
+            <p class="about-lead">BestDeBest is an online store where you can shop a wide variety of products at the best quality and the best price, every day.</p>
+            <div class="about-grid">
+                <div class="about-item"><span class="about-icon">🛒</span><strong>Shop Everything</strong><p>Electronics, clothing, home &amp; kitchen, novelties, food and more in one place.</p></div>
+                <div class="about-item"><span class="about-icon">🏪</span><strong>Sell Your Own</strong><p>Become a verified seller and list your products to reach daily buyers.</p></div>
+                <div class="about-item"><span class="about-icon">🚚</span><strong>Fast Delivery</strong><p>Orders are confirmed by sellers and delivered by our riders.</p></div>
+                <div class="about-item"><span class="about-icon">🎧</span><strong>Customer Support</strong><p>Questions, returns or broken items? Our support team is here to help.</p></div>
+            </div>
+            <button type="button" class="auth-submit-btn" onclick="closeModal('aboutModal')">Start Shopping</button>
+        </div>
+    </div>
+
+    <div class="modal" id="policyModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closePolicyModal()">&times;</span>
+            <h2 class="modal-title mb-12">Store Policy & Contact</h2>
+            <p class="policy-intro">Welcome to BestDeBest! We are committed to offering top-tier customer service, secure fulfillment, and accurate demand forecasting transparency.</p>
+            <div class="contact-box">
+                <p class="fs-13 mb-6"><strong>Contact Email:</strong> <span class="text-sky">bruhboyxean30@gmail.com</span></p>
+                <p class="fs-13"><strong>Contact Phone:</strong> <span class="text-sky">0917-123-4567</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('productModal')">&times;</span>
+            <div id="modalImgContainer" class="product-modal-img"></div>
+            <h2 id="modalTitle" class="modal-title mb-10"></h2>
+            <p id="modalDesc" class="modal-desc"></p>
+            
+            <div class="modal-horizontal-meta">
+                <span id="modalCategoryTag">Category: -</span>
+                <span id="modalSellerTag">Seller: -</span>
+                <span id="modalStockTag">Stock: -</span>
+            </div>
+
+            <div id="modalRatingTag" class="product-modal-rating">⭐️ Rating: 4.8 / 5.0 (24 reviews)</div>
+            <div id="modalPrice" class="product-modal-price"></div>
+            <div class="modal-qty-row">
+                <label for="modalQtyInput">Quantity</label>
+                <input type="number" id="modalQtyInput" min="1" step="1" value="1" inputmode="numeric" onfocus="this.select()" oninput="fixModalQty(false)" onchange="fixModalQty(true)" onblur="fixModalQty(true)" onkeydown="if(event.key==='Enter'){event.preventDefault();addCurrentModalItemToCart();}">
+                <small id="modalQtyNote" class="modal-qty-note"></small>
+            </div>
+            <button class="cart-btn modal-add-btn" id="modalAddToCartBtn" onclick="addCurrentModalItemToCart()">Add to Cart</button>
+            <button type="button" class="cart-btn mb-12" id="viewSellerProfileBtn">View Seller Profile</button>
+            <div id="productReviewsPanel" class="reviews-panel"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="publicProfileModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('publicProfileModal')">&times;</span>
+            <h2 class="modal-title mb-12">Public Profile</h2>
+            <div id="publicProfileContent"></div>
+        </div>
+    </div>
+    <div class="modal" id="reviewModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('reviewModal')">&times;</span>
+            <h2 class="modal-title mb-12">Rate & Review</h2>
+            <form onsubmit="submitOrderReview(event)">
+                <input type="hidden" id="reviewOrderId"><input type="hidden" id="reviewProductId">
+                <div class="form-group"><label>Rating</label><select id="reviewRating" required><option value="5">★★★★★ - Excellent</option><option value="4">★★★★ - Good</option><option value="3">★★★ - Okay</option><option value="2">★★ - Poor</option><option value="1">★ - Very poor</option></select></div>
+                <div class="form-group"><label>Your comment</label><textarea id="reviewComment" rows="4" required maxlength="800" placeholder="Share your experience with this item"></textarea></div>
+                <button type="submit" class="auth-submit-btn">Publish Review</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="riderReviewModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('riderReviewModal')">&times;</span>
+            <h2 class="modal-title mb-8">🚚 Rate Your Rider</h2>
+            <p class="modal-note" id="riderReviewSummary"></p>
+            <form onsubmit="submitRiderReview(event)">
+                <input type="hidden" id="riderReviewOrderId">
+                <div class="form-group"><label>Rating</label><select id="riderReviewRating" required><option value="5">★★★★★ - Excellent</option><option value="4">★★★★ - Good</option><option value="3">★★★ - Okay</option><option value="2">★★ - Poor</option><option value="1">★ - Very poor</option></select></div>
+                <div class="form-group"><label>Comment (optional)</label><textarea id="riderReviewComment" rows="3" maxlength="400" placeholder="How was the delivery? Was the rider on time and careful with your order?"></textarea></div>
+                <button type="submit" class="auth-submit-btn">Submit Rider Rating</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="banUserModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('banUserModal')">&times;</span>
+            <h2 class="modal-title text-red mb-8">🚫 Ban Account</h2>
+            <p id="banUserSummary" class="modal-summary"></p>
+            <form onsubmit="confirmBanUser(event)">
+                <input type="hidden" id="banUserEmail">
+                <div class="form-group"><label>Reason (shown to them if they try to log in)</label>
+                    <textarea id="banUserReason" rows="3" maxlength="200" required placeholder="e.g. Repeated abusive behaviour"></textarea></div>
+                <button type="submit" class="auth-submit-btn auth-submit-btn--danger">Ban Account</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="cancelOrderModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('cancelOrderModal')">&times;</span>
+            <h2 class="modal-title text-red mb-8">❌️ Cancel Order</h2>
+            <p id="cancelOrderSummary" class="modal-summary"></p>
+            <form onsubmit="confirmCancelOrder(event)">
+                <input type="hidden" id="cancelOrderId">
+                <div class="form-group"><label>Reason</label>
+                    <select id="cancelOrderReason" required>
+                        <option>Item is unavailable or seller cannot fulfil it</option>
+                        <option>Suspected fraud</option>
+                        <option>Customer asked to cancel</option>
+                        <option>Policy violation</option>
+                        <option>Other</option>
+                    </select></div>
+                <div class="form-group"><label>Extra note (optional)</label><textarea id="cancelOrderNote" rows="2" maxlength="200" placeholder="Shown to the buyer and the seller"></textarea></div>
+                <p class="form-hint mb-10">Stock is restored, revenue is reversed, and the buyer and seller are told.</p>
+                <button type="submit" class="auth-submit-btn auth-submit-btn--danger">Cancel This Order</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="adminChatModal">
+        <div class="modal-content support-modal-content">
+            <span class="close-btn" onclick="closeModal('adminChatModal')">&times;</span>
+            <h2 id="adminChatTitle" class="modal-title mb-2">Chat</h2>
+            <p id="adminChatSub" class="form-hint mb-10"></p>
+            <div id="adminChatMessages" class="dm-box"></div>
+            <form onsubmit="sendAdminChat(event)">
+                <div class="form-group"><label>Regarding (optional)</label><input type="text" id="adminChatContext" maxlength="120" placeholder="e.g. Order ORD-1234 · item name"></div>
+                <div class="ticket-reply"><textarea id="adminChatInput" rows="2" maxlength="600" required placeholder="Type a message..."></textarea>
+                <button type="submit" class="ach-claim-btn anim-none">Send</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="supportModal">
+        <div class="modal-content support-modal-content">
+            <span class="close-btn" onclick="closeModal('supportModal')">&times;</span>
+            <h2 class="modal-title mb-12">🎧 Customer Service</h2>
+            <div class="support-tabs">
+                <button type="button" class="support-tab active" id="supTab-faq" onclick="switchSupportTab('faq')">FAQ</button>
+                <button type="button" class="support-tab" id="supTab-new" onclick="switchSupportTab('new')">New Ticket</button>
+                <button type="button" class="support-tab" id="supTab-tickets" onclick="switchSupportTab('tickets')">My Tickets <span id="supTicketsCount"></span></button>
+                <button type="button" class="support-tab" id="supTab-returns" onclick="switchSupportTab('returns')">My Returns</button>
+                <button type="button" class="support-tab" id="supTab-inbox" onclick="switchSupportTab('inbox')">Messages</button>
+            </div>
+
+            <div id="supPane-faq" class="support-pane">
+                <details class="faq-item" open><summary>My item arrived broken. Can I return it?</summary>
+                    <p>Yes. After you confirm the order as received, open <strong>My Purchases</strong>, find the order and tap <strong>Return broken item</strong>. Describe the problem and add a photo if you can. You have 7 days after receiving the item. If approved, you are refunded.</p></details>
+                <details class="faq-item"><summary>How do I pay for my order?</summary>
+                    <p>After the seller confirms your order it moves to <strong>To Pay</strong>. Open My Purchases and choose GCash, Cash on Delivery or Credit Card.</p></details>
+                <details class="faq-item"><summary>Why can't I see or buy 18+ items?</summary>
+                    <p>18+ items are hidden from guests and from accounts under 18. If your date of birth shows you are 18 or older, open <strong>Age Verification</strong> in the sidebar and send a photo of your National ID plus a selfie holding it. Once a store admin approves it, 18+ items appear.</p></details>
+                <details class="faq-item"><summary>I forgot my password.</summary>
+                    <p>On the Sign In window tap <strong>Forgot password?</strong> and verify with your email and date of birth.</p></details>
+                <details class="faq-item"><summary>How do I contact the store directly?</summary>
+                    <p>Email <strong>bruhboyxean30@gmail.com</strong> or call <strong>0917-123-4567</strong>. Or send a ticket here and reply from <strong>My Tickets</strong>.</p></details>
+            </div>
+
+            <div id="supPane-new" class="support-pane is-hidden">
+                <form onsubmit="submitSupportTicket(event)">
+                    <div class="form-group"><label>Topic</label>
+                        <select id="supportCategory" required>
+                            <option>Order problem</option>
+                            <option>Payment</option>
+                            <option>Delivery / rider</option>
+                            <option>Broken / damaged item</option>
+                            <option>Account</option>
+                            <option>Seller issue</option>
+                            <option>Other</option>
+                        </select></div>
+                    <div class="form-group"><label>Related order (optional)</label><select id="supportOrderSelect"></select></div>
+                    <div class="form-group"><label>Subject</label><input type="text" id="supportSubject" required maxlength="80" placeholder="Short summary of the problem"></div>
+                    <div class="form-group"><label>Message</label><textarea id="supportMessage" rows="4" required minlength="10" maxlength="800" placeholder="Tell us what happened..."></textarea></div>
+                    <button type="submit" class="auth-submit-btn">Send Ticket</button>
+                </form>
+            </div>
+
+            <div id="supPane-tickets" class="support-pane is-hidden"><div id="supportTicketsList"></div></div>
+            <div id="supPane-returns" class="support-pane is-hidden"><div id="supportReturnsList"></div></div>
+            <div id="supPane-inbox" class="support-pane is-hidden">
+                <p class="form-hint mb-8" id="inboxHint">Messages from the store team (about your orders, listings or account).</p>
+                <div id="supportInboxList" class="dm-box"></div>
+                <form id="inboxForm" onsubmit="sendInboxReply(event)" class="is-hidden">
+                    <div class="ticket-reply"><textarea id="inboxInput" rows="2" maxlength="600" required placeholder="Reply to the store team..."></textarea>
+                    <button type="submit" class="ach-claim-btn anim-none">Send</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="returnModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('returnModal')">&times;</span>
+            <h2 class="modal-title text-orange mb-6">↩️ Return Broken Item</h2>
+            <p id="returnItemSummary" class="modal-summary"></p>
+            <form onsubmit="submitReturnRequest(event)">
+                <input type="hidden" id="returnOrderId"><input type="hidden" id="returnItemId">
+                <div class="form-group"><label>What's wrong?</label>
+                    <select id="returnReason" required>
+                        <option>Item arrived broken / damaged</option>
+                        <option>Item doesn't work (defective)</option>
+                        <option>Parts are missing</option>
+                        <option>Wrong item received</option>
+                    </select></div>
+                <div class="form-group"><label>Describe the problem</label><textarea id="returnDetails" rows="4" required minlength="10" maxlength="600" placeholder="e.g. The screen was cracked when I opened the box."></textarea></div>
+                <div class="form-group"><label>Photo of the damage (recommended)</label><input type="file" id="returnPhoto" accept="image/png,image/jpeg,image/webp"><small class="form-hint">JPG, PNG or WebP, up to 2 MB.</small></div>
+                <p class="form-hint mb-10" id="returnRefundNote"></p>
+                <button type="submit" class="auth-submit-btn auth-submit-btn--warning">Submit Return Request</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="otpModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="cancelOtpFlow()">&times;</span>
+            <h2 class="modal-title mb-8" id="otpTitle">Verify Code</h2>
+            <p class="modal-note" id="otpSummary"></p>
+            <p class="otp-error is-hidden" id="otpError" role="alert"></p>
+
+            <form id="otpTargetForm" class="is-hidden" onsubmit="submitOtpTarget(event)">
+                <div class="form-group">
+                    <label for="otpTargetInput" id="otpTargetLabel">Mobile number</label>
+                    <input type="tel" id="otpTargetInput" required autocomplete="tel" placeholder="09XX XXX XXXX">
+                </div>
+                <button type="submit" class="auth-submit-btn" id="otpSendBtn">Send Code</button>
+            </form>
+
+            <form id="otpCodeForm" class="is-hidden" onsubmit="submitOtpCode(event)">
+                <p class="form-hint" id="otpSentNote"></p>
+                <div class="otp-demo-banner is-hidden" id="otpDemoBanner"></div>
+                <div class="form-group">
+                    <label for="otpCodeInput">Enter the 6-digit code</label>
+                    <input type="text" id="otpCodeInput" class="otp-code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required placeholder="••••••">
+                </div>
+                <button type="submit" class="auth-submit-btn" id="otpVerifyBtn">Verify</button>
+                <a href="#" class="forgot-link" id="otpResendLink" onclick="resendOtp(); return false;">Resend code</a>
+            </form>
+
+            <button type="button" class="auth-submit-btn is-hidden" id="otpRetryBtn" onclick="sendOtpCode()">Try Again</button>
+        </div>
+    </div>
+
+    <div class="modal" id="idVerifyModal">
+        <div class="modal-content modal-content--compact">
+            <span class="close-btn" onclick="closeModal('idVerifyModal')">&times;</span>
+            <h2 class="modal-title mb-8">🪪 Verify Your Age</h2>
+            <p class="modal-note">To see and buy 18+ items we need to confirm you are really 18 or older. Send a clear photo of your government ID (a PhilSys National ID is preferred) and a selfie holding it. A store admin reviews it by hand.</p>
+            <form onsubmit="submitIdVerification(event)" class="compact-form">
+                <div class="form-group"><label for="idTypeSelect">ID type</label>
+                    <select id="idTypeSelect" required>
+                        <option>PhilSys National ID (PhilID / ePhilID)</option>
+                        <option>Driver's License</option>
+                        <option>Passport</option>
+                        <option>UMID</option>
+                    </select></div>
+                <div class="form-group"><label for="idFrontInput">Photo of the ID (front)</label>
+                    <input type="file" id="idFrontInput" accept="image/png,image/jpeg,image/webp" required onchange="previewIdImage(event, 'idFrontPreview')">
+                    <img id="idFrontPreview" class="id-preview is-hidden" alt="Preview of your ID">
+                    <small class="form-hint">Your name and date of birth must be readable. JPG, PNG or WebP, up to 3 MB.</small></div>
+                <div class="form-group"><label for="idSelfieInput">Selfie holding the same ID</label>
+                    <input type="file" id="idSelfieInput" accept="image/png,image/jpeg,image/webp" capture="user" required onchange="previewIdImage(event, 'idSelfiePreview')">
+                    <img id="idSelfiePreview" class="id-preview is-hidden" alt="Preview of your selfie">
+                    <small class="form-hint">Your face and the ID must both be visible. This stops borrowed IDs.</small></div>
+                <label class="check-row"><input type="checkbox" id="idConsentCheck" required> I agree the store may review my ID only to confirm my age. The photos are deleted right after the review.</label>
+                <button type="submit" class="auth-submit-btn">Submit for Review</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="cart-drawer" id="cartDrawer">
+        <div class="cart-header">
+            <span>Your Shopping Cart</span>
+            <span class="close-btn close-btn--static" onclick="toggleCartDrawer()">&times;</span>
+        </div>
+        <div class="cart-items" id="cartItemsContainer">
+            <p class="empty-note">Your cart is empty</p>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total-row">
+                <span>Total:</span>
+                <span id="cartTotalPrice" class="text-sky">₱0.00</span>
+            </div>
+            <div id="cartVoucherBox" class="cart-voucher-box is-hidden"></div>
+            <button class="checkout-btn" onclick="alertCheckout()">Proceed to Checkout</button>
+        </div>
+    </div>
+
+    <div class="modal" id="orderChatModal">
+        <div class="modal-content modal-content--chat">
+            <span class="close-btn" onclick="closeModal('orderChatModal')">&times;</span>
+            <h2 id="chatOrderLabel" class="modal-title mb-12 fs-16">Chat</h2>
+            <div id="chatMessagesBox" class="chat-box"></div>
+            <form onsubmit="sendOrderChat(event)" class="chat-form">
+                <input type="text" id="chatInput" placeholder="Type a message..." required class="chat-input">
+                <button type="submit" class="auth-submit-btn auth-submit-btn--inline">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Supabase client (public publishable key; never put a service_role key in the browser) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.BESTDEBEST_SUPABASE_URL = "https://lpmcchrohnoirigighro.supabase.co";
+        window.BESTDEBEST_SUPABASE_ANON_KEY = "sb_publishable_bQxZQthDI4SkBc4r-UsIyQ_2GjlVIlf";
+    </script>
+    <script src="script.js" defer></script>
+</body>
+</html>

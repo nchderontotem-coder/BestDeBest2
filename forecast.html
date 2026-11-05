@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Sales Forecast — BestDeBest</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    window.BESTDEBEST_SUPABASE_URL = "https://lpmcchrohnoirigighro.supabase.co";
+    window.BESTDEBEST_SUPABASE_ANON_KEY = "sb_publishable_bQxZQthDI4SkBc4r-UsIyQ_2GjlVIlf";
+  </script>
+  <style>
+    :root {
+      --bg-deep: #0a2a2a;
+      --bg-main: #0f3d3d;
+      --bg-card: #154d4d;
+      --bg-card-hover: #1a5c5c;
+      --accent: #4ade80;
+      --accent-glow: rgba(74, 222, 128, 0.25);
+      --text-primary: #ecfdf5;
+      --text-muted: #6ee7b7;
+      --border-soft: rgba(74, 222, 128, 0.15);
+      --shadow-soft: 0 4px 20px rgba(0,0,0,0.35);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: linear-gradient(135deg, var(--bg-deep), var(--bg-main));
+      color: var(--text-primary);
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .forecast-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .back-button {
+      display: inline-block !important;
+      color: var(--accent) !important;
+      background: rgba(74, 222, 128, 0.1) !important;
+      border: 1px solid rgba(74, 222, 128, 0.3) !important;
+      border-radius: 8px !important;
+      padding: 0.75rem 1.5rem !important;
+      text-decoration: none !important;
+      font-weight: 600 !important;
+      margin-bottom: 2rem !important;
+      transition: all 0.3s ease !important;
+    }
+
+    .back-button:hover {
+      background: rgba(74, 222, 128, 0.2) !important;
+      transform: translateX(-5px) !important;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .page-header h1 {
+      color: var(--accent);
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header p { color: var(--text-muted); }
+    .generated-time { margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
+
+    .status-box {
+      background: var(--bg-card);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 0.75rem;
+      border-left: 3px solid #60a5fa;
+    }
+    .status-box.success { border-left-color: var(--accent); }
+    .status-box.error { border-left-color: #f87171; }
+
+    .loading { text-align: center; padding: 3rem; color: var(--text-muted); }
+    .spinner {
+      width: 40px; height: 40px; border: 3px solid var(--border-soft);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 1s linear infinite; margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .forecast-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .forecast-card:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      border-color: var(--accent);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .product-name { font-weight: 600; font-size: 1.1rem; }
+
+    .confidence-tag {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .confidence-tag.high { background: rgba(74,222,128,0.15); color: #4ade80; }
+    .confidence-tag.medium { background: rgba(250,204,21,0.15); color: #facc15; }
+    .confidence-tag.low { background: rgba(248,113,113,0.15); color: #f87171; }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed rgba(74,222,128,0.1);
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { color: var(--text-muted); font-size: 0.9rem; }
+    .stat-value { font-weight: 600; }
+    .predicted { color: var(--accent); font-weight: 700; }
+
+    .action-box {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    .action-box.restock { background: rgba(248,113,113,0.12); color: #fca5a5; border: 1px solid rgba(248,113,113,0.25); }
+    .action-box.maintain { background: rgba(74,222,128,0.12); color: #86efac; border: 1px solid rgba(74,222,128,0.25); }
+
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      .forecast-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="forecast-container">
+
+    <!-- BACK BUTTON -->
+    <a href="index.html" class="back-button" id="backLink">← Back to Store</a>
+
+    <div class="page-header">
+      <h1>🤖 AI Sales & Restock Forecast</h1>
+      <p>Projected sales volume and restocking recommendations</p>
+      <div class="generated-time" id="generatedTime">— Loading...</div>
+    </div>
+
+    <div id="statusBox" class="status-box" style="display: none;">
+      <span id="statusIcon">ℹ️</span>
+      <span id="statusText"></span>
+    </div>
+
+    <div id="forecastContent"></div>
+  </div>
+
+  <script>
+    const BACKEND_URL = "http://localhost:5000";
+
+    // Use the same Supabase session as index.html. Keep legacy token support
+    // for installations that still authenticate the forecast API with a custom JWT.
+    const forecastSupabase = window.supabase?.createClient(
+      window.BESTDEBEST_SUPABASE_URL,
+      window.BESTDEBEST_SUPABASE_ANON_KEY
+    );
+
+    async function getAuthSession() {
+      const legacyToken = localStorage.getItem("token");
+      if (legacyToken) return { token: legacyToken, email: null };
+
+      if (!forecastSupabase) {
+        throw new Error("Authentication could not be initialized. Please return to the store and sign in again.");
+      }
+
+      const { data, error } = await forecastSupabase.auth.getSession();
+      if (error) throw error;
+      if (!data.session?.access_token) {
+        throw new Error("Please log in with your manager account first.");
+      }
+
+      return {
+        token: data.session.access_token,
+        email: data.session.user?.email || ""
+      };
+    }
+
+    document.getElementById("backLink").addEventListener("click", function() {
+      window.location.href = "index.html";
+    });
+
+    function showStatus(message, type = "info") {
+      const box = document.getElementById("statusBox");
+      box.style.display = "flex";
+      box.className = `status-box ${type}`;
+      document.getElementById("statusIcon").textContent = 
+        { info: "ℹ️", success: "✅", error: "❌" }[type];
+      document.getElementById("statusText").textContent = message;
+    }
+
+    function getConfidenceClass(level) {
+      const l = String(level).toLowerCase();
+      return l === 'high' ? 'high' : l === 'medium' ? 'medium' : 'low';
+    }
+
+    function getActionClass(action) {
+      return String(action).toLowerCase().includes('restock') ? 'restock' : 'maintain';
+    }
+
+    function renderForecast(data) {
+      document.getElementById("generatedTime").textContent = 
+        `Generated on: ${new Date(data.generatedAt).toLocaleString()}`;
+
+      if (!data.forecast || data.forecast.length === 0) {
+        showStatus("No sales data found.", "info");
+        return;
+      }
+
+      document.getElementById("forecastContent").innerHTML = `
+        <div class="forecast-grid">
+          ${data.forecast.map(item => `
+            <div class="forecast-card">
+              <div class="card-header">
+                <h3 class="product-name">${item.productName}</h3>
+                <span class="confidence-tag ${getConfidenceClass(item.confidence)}">
+                  ${item.confidence}
+                </span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Current Sales</span>
+                <span class="stat-value">${item.currentSales} units</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Forecast Period</span>
+                <span class="stat-value">${item.forecastMonths} months</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Projected Sales</span>
+                <span class="stat-value predicted">${item.predictedQty} units</span>
+              </div>
+              <div class="action-box ${getActionClass(item.suggestedAction)}">
+                ${item.suggestedAction.toLowerCase().includes('restock') ? '⚠️' : '✅'}
+                <span>${item.suggestedAction}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      showStatus(`Forecast generated for ${data.forecast.length} products`, "success");
+    }
+
+    async function loadForecast() {
+      document.getElementById("forecastContent").innerHTML = `
+        <div class="loading"><div class="spinner"></div><p>Generating forecast...</p></div>
+      `;
+
+      try {
+        const auth = await getAuthSession();
+
+        // The forecast is a manager feature. The backend must also enforce this
+        // permission; this check only prevents accidental navigation in the UI.
+        if (auth.email && auth.email.toLowerCase() !== "bruhboyxean30@gmail.com") {
+          throw new Error("The AI Forecast is available to the store manager only.");
+        }
+
+        const res = await fetch(`${BACKEND_URL}/api/ai/forecast`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${auth.token}`
+          },
+          body: JSON.stringify({ months: 3 })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `Forecast request failed (${res.status}).`);
+        }
+
+        renderForecast(await res.json());
+      } catch (err) {
+        document.getElementById("forecastContent").innerHTML = "";
+        showStatus(err.message || "Could not generate the forecast.", "error");
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadForecast);
+  </script>
+</body>
+</html>

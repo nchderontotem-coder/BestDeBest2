@@ -1,0 +1,39 @@
+# BestDeBest — Supabase Auth conversion
+
+## Files
+- `index.html`: original page layout with Supabase JS v2 and your project settings added.
+- `script.js`: original JavaScript plus a Supabase authentication layer.
+- `supabase-schema.sql`: profile table and row-level security policies.
+
+## 1. Run the database SQL
+Open Supabase Dashboard → SQL Editor, paste `supabase-schema.sql`, and run it.
+
+## 2. Check Supabase Auth settings
+In Authentication → Providers → Email:
+- Enable Email provider.
+- Enable email confirmations.
+- Use an email template that contains `{{ .Token }}` (not only `{{ .ConfirmationURL }}`) to deliver the six-digit code.
+- The code expiry is controlled by Supabase Auth settings. Set the email OTP expiry to 300 seconds (5 minutes), if your project dashboard allows this setting.
+- Configure SMTP/custom SMTP for reliable delivery to Gmail. Supabase's default email service is rate-limited and intended for testing.
+
+## 3. Project settings
+The supplied values were reversed in your message:
+- `http://127.0.0.1:5500/index.html` is your local website address, NOT the Supabase Project URL.
+- The Supabase project URL was taken from the URL embedded in your second value: `https://lpmcchrohnoirigighro.supabase.co`.
+- The publishable key was taken from the `sb_publishable_...` value.
+
+The publishable key is intended for browser use. Never put a `service_role` or secret key in `index.html` or `script.js`.
+
+## 4. Run locally
+Keep your existing CSS, images, and other assets in the same folder. Put `index.html` and `script.js` together. Start your local server and open `http://127.0.0.1:5500/index.html`.
+
+## Authentication behavior
+- Sign up sends a real Supabase email OTP. The profile is written only after OTP verification; Supabase may hold an unconfirmed Auth identity while verification is pending.
+- Login/logout use Supabase Auth.
+- Forgot password sends a Supabase recovery OTP; after verification it updates the password. The existing date-of-birth field remains in the form but email recovery OTP is the actual account-ownership check.
+- Account-settings password verification re-authenticates with Supabase.
+- Passwords are never stored in `public.profiles`.
+
+## Important existing-app limitation
+This conversion covers authentication and the profile record only, as requested. Other store data (orders, products, carts, chats, reviews, seller/delivery workflows, etc.) remains in the original JavaScript/browser-side data model and has NOT been migrated to Supabase.
+Your original demo manager account/password is not imported into Supabase. Create that account through Supabase Auth first, verify its email, then implement secure server-side admin role authorization before using it for real admin operations. The current hard-coded manager email check is only legacy UI behavior and must not be treated as secure access control.
